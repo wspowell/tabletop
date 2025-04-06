@@ -1,6 +1,8 @@
 # tabletop
 A tabletop game server for use with trusted friends.
 
+![](https://github.com/wspowell/tabletop/blob/main/preview.png "Preview of tabletop showing token being moved around a game map in real time")
+
 ## Running the server
 Run `make build` to produce a binary to run in either linux or windows. The server runs a web server on port 8080 and a websocket server on port 3000. The server is intended to be run by the game's Story Teller (ST) either on their computer or some other server they can access.
 
