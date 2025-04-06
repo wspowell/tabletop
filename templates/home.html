@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon/apple-touch-icon">
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32">
+    <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16">
+    <link rel="manifest" href="/images/favicon/site.webmanifest">
+
+    <link href="/styles/default" rel="stylesheet"></link>
+    <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous"> -->
+    <script src="/scripts/websocket"></script>
+    <title>TableTop</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <div id="login">
+        <table>
+            <tr>
+                <td colspan="2"><div id="loginError"></div></td>
+            </tr>
+            <tr>
+                <td>Username:</td>
+                <td><input type="text" id="loginUsername" name="username"></td>
+            </tr>
+            <tr>
+                <td>Secret:</td>
+                <td><input type="password" id="loginSecret" name="secret"></td>
+            </tr>
+            <tr>
+                <td colspan="2"><button onclick="login()">Login</button></td>
+            </tr>
+        </table>
+    </div>
+    <div id="page-layout">
+        <div id="header"></div>
+        <!-- <div id="left-sidebar">
+            <section>
+                <h3>Maps</h3>
+                <ul>
+                    <li>Tavern</li>
+                    <li>Fort</li>
+                    <li>Cave</li>
+                </ul>
+            </section>
+        </div> -->
+        <div id="content">
+            <div>
+                <div id="map-grid"></div>
+            </div>
+        </div>
+        <!-- <div id="right-sidebar">
+            <section>
+                <h3>Chat</h3>
+                <ul>
+                    <li>Roll for initiative</li>
+                    <li>/roll 1d20</li>
+                    <li>CrItIcAl FaIlUrE</li>
+                </ul>
+            </section>
+        </div> -->
+        <div id="footer">
+            <div id="st-container">
+                <div>
+                    <button onclick="sendTokensHome(true)">Send Tokens Home</button>
+                    <div>Map Width:</div><input id="new-grid-width"></input>
+                    <div>Map Height:</div><input id="new-grid-height"></input>
+                    <button onclick="regenerateMapGrid(document.getElementById('new-grid-width').value, document.getElementById('new-grid-height').value)">Resize</button>
+                </div>
+                <div>
+                    <div>Maps</div>
+                    <ul id="map-list"></ul>
+                </div>
+                <div>
+                    <div>Token Bank</div>
+                    <div id="token-bank"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>

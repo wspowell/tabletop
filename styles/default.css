@@ -1,0 +1,126 @@
+body {
+    margin: 0;
+    padding: 0;
+    color: #fbfbfe;
+    background-color: #2B2A33;
+    font-family: 'Courier New', monospace;
+}
+
+#login {
+    display: flex;
+    position: absolute;
+    top: 40%;
+    left: 40%;
+    flex-direction: column;
+}
+
+.player-name {
+    font-weight: bold;
+    font-size: large;
+    margin: auto;
+}
+.token {
+    position: relative;
+    touch-action: none;
+    transition: all 2s ease;
+}
+.token-home {
+    border: 2px outset gold;
+    border-radius: 50%;
+    background-color: dimgray;
+    padding: 1px;
+    margin: auto;
+}
+
+/* Grid Layout */
+
+#page-layout {
+    width: 100vw;
+    height: 100vh;
+    display: none;
+    grid-template-areas:
+        "header       header  header"
+        "content content content"
+        "footer       footer  footer";
+    grid-template-columns: 1fr 3fr 1fr;
+    grid-template-rows: 1fr 5fr 1fr;
+    gap: 5px;
+    background-color: #2B2A33;
+}
+#page-layout > div#header {
+    grid-area: header;
+    text-align: center;
+}
+#header {
+    display: grid;
+    align-items: center;
+    justify-items: center;
+    gap: 5px;
+    padding: 2px;
+}
+#header > div {
+    grid-row: 1;
+}
+#page-layout > div#left-sidebar {
+    grid-area: left-sidebar;
+}
+#page-layout > div#right-sidebar {
+    grid-area: right-sidebar;
+}
+#page-layout > div#content {
+    grid-area: content;
+
+    display: flex;
+    justify-content: center;
+    overflow: hidden;
+
+    /* border: 30px solid transparent;
+    border-top-width: 20px;
+    border-bottom-width: 20px;
+    border-image: url("/images/d20-outline-border") 100 round;
+    border-image-width: 100px; */
+}
+#page-layout > div#footer {
+    grid-area: footer;
+    overflow: hidden;
+    display: flex;
+}
+
+div#content > div {
+    border: 10px solid #3a1010;
+    border-radius: 20px 20px 20px 20px;
+    overflow-x: scroll;
+    overflow-y: scroll;
+}
+#map-grid {
+    display: grid;
+    background-repeat: no-repeat;
+    overflow: hidden;
+    outline: 2px solid black;
+}
+
+#map-grid > div {
+    outline: 1px solid black;
+    overflow: visible;
+}
+
+#st-container {
+    display: flex;
+    flex-direction: row;
+    padding: 5px;
+}
+#st-container > div {
+    padding: 2px;
+    overflow: scroll;
+}
+#map-list li {
+    cursor: pointer;
+}
+#map-list li:hover {
+    background-color: #2B2A33;
+}
+
+#token-bank {
+    display: flex;
+    flex-direction: row;
+}
