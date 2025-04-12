@@ -383,6 +383,11 @@ function createNpcToken(tokenName, isInstance) {
             return false;
         }
 
+        // Only allow deletion of instanced tokens.
+        if (npcToken.dataset.instance == "false") {
+            return false;
+        }
+
         // Send home.
         // There can be multiple so just delete them since the token bank always has a copy.
         const mapName = document.getElementById("map-grid").dataset.mapName;
