@@ -7,10 +7,11 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/gorilla/mux"
+
+	"github.com/wspowell/tabletop/filepath"
 )
 
 var (
@@ -25,47 +26,51 @@ type Task struct {
 }
 
 func init() {
-	tmpl, _ = template.ParseGlob("." + string(filepath.Separator) + filepath.Join("templates", "*.html"))
+	tmpl, _ = template.ParseGlob(filepath.Format("./templates/*.html"))
 }
 
-func serveHtml(ctx context.Context) {
+func serveHtml(ctx context.Context, config Config) {
 	router := mux.NewRouter()
 
 	mux.CORSMethodMiddleware(router)
 
 	// gRouter.Use(enableCORS)
 
-	router.HandleFunc("/", Homepage)
+	router.HandleFunc("/", Homepage(config.WebsocketPort))
 
-	serveStylesheet(router, "."+string(filepath.Separator)+filepath.Join("styles", "default.css"))
+	serveStylesheet(router, "./styles/default.css")
 
-	serveJavascriptFile(router, "."+string(filepath.Separator)+filepath.Join("scripts", "websocket.js"))
+	serveJavascriptFile(router, "./scripts/websocket.js")
 
 	// Serve favicon.
-	servePngFile(router, "."+string(filepath.Separator)+filepath.Join("images", "favicon", "android-chrome-192x192.png"))
-	servePngFile(router, "."+string(filepath.Separator)+filepath.Join("images", "favicon", "android-chrome-512x512.png"))
-	servePngFile(router, "."+string(filepath.Separator)+filepath.Join("images", "favicon", "apple-touch-icon.png"))
-	servePngFile(router, "."+string(filepath.Separator)+filepath.Join("images", "favicon", "favicon-16x16.png"))
-	servePngFile(router, "."+string(filepath.Separator)+filepath.Join("images", "favicon", "favicon-32x32.png"))
+	servePngFile(router, "./images/favicon/android-chrome-192x192.png")
+	servePngFile(router, "./images/favicon/android-chrome-512x512.png")
+	servePngFile(router, "./images/favicon/apple-touch-icon.png")
+	servePngFile(router, "./images/favicon/favicon-16x16.png")
+	servePngFile(router, "./images/favicon/favicon-32x32.png")
 
 	// Server d20 border icon.
-	servePngFile(router, "."+string(filepath.Separator)+filepath.Join("images", "d20-outline-border.png"))
+	servePngFile(router, "./images/d20-outline-border.png")
 
 	// Server all game images.
 	serveDataPngFiles(router)
 
-	http.ListenAndServe(":8080", router)
+	address := config.ServerHost + ":" + config.ServerPort
+
+	log.Println("web address", address)
+
+	http.ListenAndServe(address, router)
 }
 
 func serveDataPngFiles(router *mux.Router) {
-	err := filepath.Walk("."+string(filepath.Separator)+filepath.Join("data"),
+	err := filepath.Walk(filepath.Format("./data"),
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
 
 			if strings.HasSuffix(path, ".png") {
-				servePngFile(router, "."+string(filepath.Separator)+filepath.Join(path))
+				servePngFile(router, "./"+path)
 			}
 
 			return nil
@@ -93,26 +98,26 @@ func serveDataPngFiles(router *mux.Router) {
 // }
 
 func serveStylesheet(router *mux.Router, path string) {
-	router.Handle(strings.TrimSuffix(strings.TrimPrefix(path, "."), ".css"), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	router.Handle(filepath.Route(path), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/css")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
-		http.ServeFile(w, r, path)
+		http.ServeFile(w, r, filepath.Format(path))
 	}))
 }
 
 func serveJavascriptFile(router *mux.Router, path string) {
-	router.Handle(strings.TrimSuffix(strings.TrimPrefix(path, "."), ".js"), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	router.Handle(filepath.Route(path), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/javascript")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
-		http.ServeFile(w, r, path)
+		http.ServeFile(w, r, filepath.Format(path))
 	}))
 }
 
 func servePngFile(router *mux.Router, path string) {
-	router.Handle(strings.TrimSuffix(strings.TrimPrefix(path, "."), ".png"), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	router.Handle(filepath.Route(path), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "image/png")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
-		http.ServeFile(w, r, path)
+		http.ServeFile(w, r, filepath.Format(path))
 	}))
 }
 
@@ -120,6 +125,14 @@ func LoginForm(w http.ResponseWriter, r *http.Request) {
 	tmpl.ExecuteTemplate(w, "login.html", nil)
 }
 
-func Homepage(w http.ResponseWriter, r *http.Request) {
-	tmpl.ExecuteTemplate(w, "home.html", nil)
+func Homepage(websocketPort string) func(w http.ResponseWriter, r *http.Request) {
+	type PageData struct {
+		WebsocketPort string
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		tmpl.ExecuteTemplate(w, "home.html", PageData{
+			WebsocketPort: websocketPort,
+		})
+	}
 }

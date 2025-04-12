@@ -643,7 +643,7 @@ function getPositionAtCenter(element) {
 //////// WebSocket
 //////////////////////////////////////////////////////////////////////////////////////////
 
-const websocketUrl = "ws://"+window.location.hostname+":3000/websocket";
+const websocketUrl = "ws://"+window.location.hostname+":"+websocketPort+"/websocket";
 // Create WebSocket connection.
 let socket;
 function resetSocket() {

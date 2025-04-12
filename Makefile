@@ -14,7 +14,7 @@ lint:
 
 build:
 	GOOS=windows goarch=amd64 go build -o tabletop.exe
-	go build -o tabletop
+	GOOS=linux   goarch=amd64 go build -o tabletop
 
 run: build
 	./tabletop

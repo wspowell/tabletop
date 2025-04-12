@@ -18,10 +18,12 @@ import (
 	"github.com/wspowell/tabletop/message"
 )
 
-func serveWebSocket(ctx context.Context, waitGroup *sync.WaitGroup) {
+func serveWebSocket(ctx context.Context, config Config, waitGroup *sync.WaitGroup) {
 	defer waitGroup.Done()
 
-	const serverAddress = ":3000"
+	serverAddress := config.ServerHost + ":" + config.WebsocketPort
+
+	log.Println("websocket address", serverAddress)
 
 	gameState, err := game.LoadState()
 	if err != nil {
