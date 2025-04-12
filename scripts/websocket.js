@@ -268,6 +268,15 @@ function loadPlayer(user) {
         header.appendChild(player);
         addHealthBar(username, player);
     } else {
+        const stToken = document.createElement("div");
+        stToken.id = "st-token";
+        stToken.style.backgroundImage = "url('/data/users/"+username+"/token')";
+        stToken.style.backgroundSize = gridCellSizePx+"px "+gridCellSizePx+"px";
+        stToken.style.width = gridCellSizePx+"px";
+        stToken.style.height = gridCellSizePx+"px";
+
+        player.appendChild(stToken);
+
         // Always put the ST first in the players list.
         header.insertBefore(player, header.firstChild);
     }
