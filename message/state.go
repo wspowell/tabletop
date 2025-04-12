@@ -8,7 +8,7 @@ import (
 
 type State struct {
 	*game.State
-	MapData json.RawMessage `json:"mapData,omitempty"`
+	MapData      json.RawMessage `json:"mapData,omitempty"`
 }
 
 func (self State) Type() string {

@@ -31,6 +31,95 @@ body {
     padding: 1px;
     margin: auto;
 }
+.health-bar {
+    text-align: center;
+    font-weight: bold;
+    font-size: 16px;
+}
+.health-value {
+    text-align: center;
+    padding: 2px;
+}
+.health-value > div {
+    display: inline-block;
+}
+.health-input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #fbfbfe;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    font-size: large;
+    min-width: 1ch;
+}
+.health-value input:focus {
+    background: transparent;
+    border: none;
+    outline: none;
+}
+.health-value input:first-child {
+    text-align: right;
+}
+.health-value input:last-child {
+    text-align: left;
+}
+.health-bloodied {
+    text-shadow: -1px -1px 0 #df9f9f, 1px -1px 0 #df9f9f, -1px 1px 0 #df9f9f, 1px 1px 0 #df9f9f;
+    color: #f00;
+    animation: shaking 0.75s linear infinite;
+}
+@keyframes shaking {
+    0% {
+        transform: skewX(-10deg) skewY(-10deg) translateX(1px) translateY(1px);
+    }
+    5% {
+        transform: skewX(10deg) skewY(10deg) translateX(-1px) translateY(-1px);
+    }
+    10% {
+        transform: skewX(-10deg) skewY(-10deg) translateX(-1px) translateY(1px);
+    }
+    15% {
+        transform: skewX(10deg) skewY(10deg) translateX(1px) translateY(-1px);
+    }
+    20% { 
+        transform: skewX(0deg) skewY(0deg) translateX(0px) translateY(0px);
+    }
+    100% { 
+        transform: skewX(0deg) skewY(0deg) translateX(0px) translateY(0px);
+    }
+}
+.health-unconscious {
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+    color: #606060;
+    animation: pulsing 5.0s linear infinite;
+}
+@keyframes pulsing {
+    0% {
+        transform: scale(100%, 100%);
+    }
+
+    50% {
+        transform: scale(80%, 60%);
+    }
+
+    100% {
+        transform: scale(100%, 100%);
+    }
+}
+.health-beefy {
+    text-shadow: -1px -1px 0 #fbfbfe, 1px -1px 0 #fbfbfe, -1px 1px 0 #fbfbfe, 1px 1px 0 #fbfbfe;
+    color: #32adff;
+}
+
+.health-modifier {
+    display: inline-block;
+    cursor: pointer;
+    outline: 1px solid rebeccapurple;
+}
+.health-modifier :active {
+    outline: 2px solid purple;
+}
 
 /* Grid Layout */
 

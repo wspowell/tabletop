@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"time"
@@ -95,7 +96,7 @@ func (self *webSocketHandler) upgradeRequestToWebSocket(responseWriter http.Resp
 func (self *webSocketHandler) handleWebSocket(connection *websocket.Conn) {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Printf("panic: %s", err)
+			log.Printf("panic: %s\n%s", err, debug.Stack())
 		}
 	}()
 
@@ -123,6 +124,19 @@ func (self *webSocketHandler) handleWebSocket(connection *websocket.Conn) {
 	}
 }
 
+func (self *webSocketHandler) sessionKeepAlive(session *Session) {
+	timer := time.NewTicker(10 * time.Second)
+	for range timer.C {
+		if time.Now().Sub(session.LastKeepAliveTime) > 30*time.Second {
+			// Log the user out and then force close the connection.
+			log.Println("user connection timed out", session.User.Username)
+			session.Connection.Close()
+			timer.Stop()
+			return
+		}
+	}
+}
+
 func (self *webSocketHandler) onLogout(session *Session) {
 	_ = session.SendMessage(message.Logout{
 		Username: session.User.Username,
@@ -133,6 +147,10 @@ func (self *webSocketHandler) onLogout(session *Session) {
 	})
 
 	_ = self.state.Save()
+
+	self.sessionsMutex.Lock()
+	delete(self.sessions, session.User.Username)
+	self.sessionsMutex.Unlock()
 }
 
 func (self *webSocketHandler) messageSession(username string, payload message.Payload) error {
@@ -260,6 +278,7 @@ func (self *webSocketHandler) waitForLogin(connection *websocket.Conn) (*Session
 		}
 
 		session := NewSession(user, connection)
+		go self.sessionKeepAlive(session)
 
 		self.sessionsMutex.Lock()
 		self.sessions[payload.Username] = session
@@ -357,13 +376,15 @@ func (self *webSocketHandler) handleNextMessage(session *Session) error {
 		return err
 	}
 
-	log.Println("received message", string(data))
-
 	// Detect the payload based on the type.
 	typedData, err := message.UnmarshalType(data)
 	if err != nil {
-		log.Println(err)
+		log.Println(err, string(data))
 		return err
+	}
+
+	if typedData.Type != "keepAlive" {
+		log.Println("received message", string(data))
 	}
 
 	switch typedData.Type {
@@ -428,6 +449,21 @@ func (self *webSocketHandler) handleNextMessage(session *Session) error {
 		}
 
 		self.onMapChange(payload)
+	case "playerHealth":
+		var payload message.PlayerHealth
+		if err := message.Unmarshal(typedData, &payload); err != nil {
+			log.Println(err)
+			_ = session.SendMessage(message.Error{
+				TypeOfFailedMessage: typedData.Type,
+				ErrorMessage:        "failed reading message",
+			})
+
+			return err
+		}
+
+		self.onPlayerHealth(session, payload)
+	case "keepAlive":
+		self.onKeepAlive(session)
 	default:
 		err := fmt.Errorf("%w: %s", ErrUnknownMessage, data)
 		log.Println(err)
@@ -489,4 +525,16 @@ func getMapData(mapName string) []byte {
 	}
 
 	return mapDataBytes
+}
+
+func (self *webSocketHandler) onPlayerHealth(session *Session, payload message.PlayerHealth) {
+	// Update the game state with the player health value.
+	self.state.SetPlayerHealth(payload.PlayerHealth)
+
+	log.Println(payload)
+	_ = self.broadcastToOtherSessions(session, payload)
+}
+
+func (self *webSocketHandler) onKeepAlive(session *Session) {
+	session.LastKeepAliveTime = time.Now()
 }

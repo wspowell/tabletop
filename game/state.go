@@ -28,18 +28,27 @@ type Coordinate struct {
 	Y int `json:"y"`
 }
 
+type Health struct {
+	CurrentHealth int `json:"currentHealth"`
+	MaxHealth     int `json:"maxHealth"`
+}
+
 type State struct {
 	stateMutex sync.Mutex `json:"-"`
 
 	// MapTokens stores location keyed on mapName -> tokenId
 	MapTokens  map[string]map[string]TokenData `json:"mapTokens"`
 	CurrentMap string                          `json:"currentMap"`
+
+	PlayerHealth map[string]Health `json:"playerHealth"`
 }
 
 func LoadState() (*State, error) {
 	state := &State{
-		MapTokens:  map[string]map[string]TokenData{},
-		stateMutex: sync.Mutex{},
+		MapTokens:    map[string]map[string]TokenData{},
+		stateMutex:   sync.Mutex{},
+		CurrentMap:   "",
+		PlayerHealth: map[string]Health{},
 	}
 
 	if err := os.MkdirAll(cacheDir, os.ModePerm); err != nil {
@@ -132,5 +141,13 @@ func (self *State) DeleteToken(id string, mapName string) {
 func (self *State) SetCurrentMap(mapName string) {
 	self.stateMutex.Lock()
 	self.CurrentMap = mapName
+	self.stateMutex.Unlock()
+}
+
+func (self *State) SetPlayerHealth(playerHealth map[string]Health) {
+	self.stateMutex.Lock()
+	for username, health := range playerHealth {
+		self.PlayerHealth[username] = health
+	}
 	self.stateMutex.Unlock()
 }

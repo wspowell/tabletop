@@ -1,20 +1,24 @@
 package main
 
 import (
+	"time"
+
 	"github.com/gorilla/websocket"
 	"github.com/wspowell/tabletop/account"
 	"github.com/wspowell/tabletop/message"
 )
 
 type Session struct {
-	Connection *websocket.Conn
-	User       account.User
+	Connection        *websocket.Conn
+	LastKeepAliveTime time.Time
+	User              account.User
 }
 
 func NewSession(user account.User, connection *websocket.Conn) *Session {
 	return &Session{
-		User:       user,
-		Connection: connection,
+		User:              user,
+		Connection:        connection,
+		LastKeepAliveTime: time.Now(),
 	}
 }
 

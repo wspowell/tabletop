@@ -10,6 +10,7 @@ function User(username, displayName, isStoryTeller, externalCharacterSheetLink) 
 }
 
 let loggedInPlayer = null;
+let keepAliveJob = null;
 
 function showLogin() {
     username = "";
@@ -63,7 +64,24 @@ function completeLogin(user) {
         pageLayout.style.gridTemplateRows = "1fr 5fr";
     }
 
+    keepAlive();
+    keepAliveJob = setInterval(keepAlive, 10000);
+
     console.log("player successfully logged in", loggedInPlayer.username);
+}
+
+function keepAlive() {
+    if (!loggedInPlayer) {
+        clearInterval(keepAliveJob);
+        return;
+    }
+
+    sendMessage({
+        type: "keepAlive",
+        data: {}
+    });
+
+    return;
 }
 
 
@@ -120,9 +138,12 @@ function sendTokensHome(shouldSendUpdate) {
 }
 
 function loadPlayer(user) {
+    console.log("loading player", user.username);
+
     const username = user.username;
     const displayName = user.displayName;
     const externalCharacterSheetLink = user.externalCharacterSheetLink;
+
 
     const header = document.getElementById("header");
 
@@ -135,6 +156,7 @@ function loadPlayer(user) {
     player.classList.add("player");
 
     const playerName = document.createElement("div");
+    playerName.id = "player-name-"+username;
     playerName.classList.add("player-name");
     playerName.innerText = displayName;
     if (externalCharacterSheetLink != "") {
@@ -207,10 +229,11 @@ function loadPlayer(user) {
         };
         player.appendChild(playerTokenHome);
 
-        const playerToken = document.createElement("img");
+        const playerToken = document.createElement("div");
         playerToken.id = "token_"+username;
         playerToken.classList.add("token");
-        playerToken.src = "/data/users/"+username+"/token";
+        playerToken.style.backgroundImage = "url('/data/users/"+username+"/token')";
+        playerToken.style.backgroundSize = gridCellSizePx+"px "+gridCellSizePx+"px";
         playerToken.style.width = gridCellSizePx+"px";
         playerToken.style.height = gridCellSizePx+"px";
         playerToken.dataset.homeId = playerTokenHome.id;
@@ -243,11 +266,138 @@ function loadPlayer(user) {
         playerTokenHome.appendChild(playerToken);
 
         header.appendChild(player);
+        addHealthBar(username, player);
     } else {
         // Always put the ST first in the players list.
         header.insertBefore(player, header.firstChild);
     }
 }
+
+function addHealthBar(username, token) {
+    const healthBar = document.createElement("div");
+    healthBar.classList.add("health-bar");
+    
+    const healthValue = document.createElement("div");
+    healthValue.classList.add("health-value");
+    const healthValueCurrent = document.createElement("input");
+    healthValueCurrent.id = "current-health-"+username;
+    healthValueCurrent.type = "text";
+    healthValueCurrent.classList.add("health-input");
+    healthValueCurrent.value = 0;
+    healthValueCurrent.dataset.username = username;
+    healthValueCurrent.onfocus = modifyHealthValue;
+    const healthDivider = document.createElement("div");
+    healthDivider.textContent = "/";
+    const healthValueMax = document.createElement("input");
+    healthValueMax.id = "max-health-"+username;
+    healthValueMax.type = "text";
+    healthValueMax.classList.add("health-input");
+    healthValueMax.value = 0;
+    healthValueMax.dataset.username = username;
+    healthValueMax.onfocus = modifyHealthValue;
+    healthValue.appendChild(healthValueCurrent);
+    healthValue.appendChild(healthDivider);
+    healthValue.appendChild(healthValueMax);
+
+    healthBar.appendChild(healthValue);
+
+    token.appendChild(healthBar);
+
+    window.addEventListener("updateStateHealth", function(event) {
+        if (event.detail.playerHealth && event.detail.playerHealth[username]) {
+            const health = event.detail.playerHealth[username];
+            healthValueCurrent.value = health.currentHealth;
+            healthValueMax.value = health.maxHealth;
+        }
+        applyHealthEffect(username);
+    });
+}
+
+function emitHealthStateUpdate(playerHealth) {
+    const event = new CustomEvent("updateStateHealth", {
+        detail: {
+            playerHealth: playerHealth,
+        }
+    });
+    window.dispatchEvent(event);
+}
+
+function modifyHealthValue(event) {
+    const originalValue = event.target.value;
+    event.target.value = "";
+
+    event.target.onkeydown = function (e) {
+        e.target.style.width = e.target.value.length+2 + "ch"; // Make the input as wide as the text.
+        if (e.code === "Enter") { // Checks whether the pressed key is "Enter".
+            event.target.blur();
+        }
+    };
+    event.target.onblur = function (e) {
+        const username = event.target.dataset.username;
+
+        if (event.target.value.startsWith("+") || event.target.value.startsWith("-")) {
+            const newValue = Number(originalValue) + Number(event.target.value);
+            console.log("health altered", originalValue, event.target.value, "=", newValue);
+            event.target.value = newValue;
+
+            const playerHealth = {};
+            playerHealth[username] = {
+                currentHealth: Number(document.getElementById("current-health-"+username).value),
+                maxHealth: Number(document.getElementById("max-health-"+username).value),
+            };
+            sendMessage({
+                type: "playerHealth",
+                data: {
+                    playerHealth: playerHealth
+                }
+            });
+        } else if (event.target.value === "") {
+            event.target.value = Number(originalValue);
+        } else {
+            console.log("health overridden", originalValue, "->", event.target.value);
+            event.target.value = Number(event.target.value);
+
+            const playerHealth = {};
+            playerHealth[username] = {
+                currentHealth: Number(document.getElementById("current-health-"+username).value),
+                maxHealth: Number(document.getElementById("max-health-"+username).value),
+            };
+            sendMessage({
+                type: "playerHealth",
+                data: {
+                    playerHealth: playerHealth
+                }
+            });
+        }
+
+        applyHealthEffect(username);
+    };
+}
+
+function applyHealthEffect(username) {
+    const currentHealth = document.getElementById("current-health-"+username);
+    const maxHealth = document.getElementById("max-health-"+username);
+    const playerName = document.getElementById("player-name-"+username);
+
+    currentHealth.classList.remove("health-bloodied");
+    currentHealth.classList.remove("health-beefy");
+    playerName.classList.remove("health-unconscious");
+
+    if (Number(currentHealth.value) < (Number(maxHealth.value)/2.0)) {
+        currentHealth.classList.add("health-bloodied");
+
+        if (Number(currentHealth.value) <= 0) {
+            playerName.classList.add("health-unconscious");
+        }
+    } else if (Number(currentHealth.value) > Number(maxHealth.value)) {
+        currentHealth.classList.add("health-beefy");
+    }
+
+    // Make the input as wide as the text.
+    currentHealth.style.width = currentHealth.value.length + "ch"; 
+    maxHealth.style.width = maxHealth.value.length + "ch";
+}
+
 
 function unloadPlayer(username) {
     console.log("unloading player", username)
@@ -664,6 +814,8 @@ function resetSocket() {
     });
 
     socket.addEventListener("close", (event) => {
+        loggedInPlayer = null;
+
         showLogin();
         setLoginError("disconnected from server");
 
@@ -675,6 +827,8 @@ function resetSocket() {
     socket.addEventListener("error", (event) => {
         const loginError = document.getElementById("loginError");
         loginError.innerText = "disconnected from server";
+
+        loggedInPlayer = null;
 
         showLogin();
         setLoginError(payload.data.errorMessage);
@@ -721,6 +875,8 @@ function resetSocket() {
                 if (payload.data.currentMap) {
                     updateMap(payload.data.currentMap, payload.data.mapData);
                 }
+
+                emitHealthStateUpdate(payload.data.playerHealth);
                 break;
             case "tokenPosition":
                 setTokenPosition(payload.data.id, payload.data.tokenName, payload.data.mapName, payload.data.position, payload.data.isHome);
@@ -745,6 +901,9 @@ function resetSocket() {
             case "mapChange":
                 changeMap(payload.data.mapName, payload.data.mapData);
                 break;
+            case "playerHealth":
+                emitHealthStateUpdate(payload.data.playerHealth);
+                break;
             default:
                 console.error("unknown message type:", payload.type);
                 break;
@@ -758,7 +917,9 @@ function resetSocket() {
 
 function sendMessage(payload) {
     const message = JSON.stringify(payload);
-    console.log("sending message", message);
+    if (payload.type !== "keepAlive") {
+        console.log("sending message", message);
+    }
     socket.send(message);
 }
 
