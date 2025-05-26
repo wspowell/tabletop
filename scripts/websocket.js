@@ -826,7 +826,7 @@ function resetSocket() {
         loggedInPlayer = null;
 
         showLogin();
-        setLoginError("disconnected from server");
+        setLoginError("disconnected from server (please refresh to reconnect)");
 
         // setTimeout(function () {
         //     resetSocket();
@@ -835,7 +835,7 @@ function resetSocket() {
 
     socket.addEventListener("error", (event) => {
         const loginError = document.getElementById("loginError");
-        loginError.innerText = "disconnected from server";
+        loginError.innerText = "disconnected from server (please refresh to reconnect)";
 
         loggedInPlayer = null;
 

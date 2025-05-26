@@ -222,6 +222,8 @@ func (self *webSocketHandler) waitForLogin(connection *websocket.Conn) (*Session
 			continue
 		}
 
+		log.Printf("received login attempt: %+v", string(data))
+
 		if typedData.Type != "login" {
 			err := fmt.Errorf("%w: must login before sending messages", ErrLoginFailure)
 			log.Println(err)
@@ -278,7 +280,7 @@ func (self *webSocketHandler) waitForLogin(connection *websocket.Conn) (*Session
 		}
 
 		session := NewSession(user, connection)
-		go self.sessionKeepAlive(session)
+		// go self.sessionKeepAlive(session)
 
 		self.sessionsMutex.Lock()
 		self.sessions[payload.Username] = session

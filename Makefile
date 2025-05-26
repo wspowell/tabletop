@@ -19,5 +19,3 @@ build:
 run: build
 	./tabletop
 
-release:
-	
